@@ -14,7 +14,8 @@ from pathlib import Path
 VAULT_RAIZ = "C:/Users/pc/Mi unidad/Hana/Proyectos"
 
 # Path completo al script de transcripción local
-TRANSCRIBIR_PY = "C:/Users/pc/Documents/Claude Code/transcribir.py"
+# Por defecto apunta al transcribir.py incluido en este mismo repo
+TRANSCRIBIR_PY = str(Path(__file__).parent / "transcribir.py")
 
 # ─── NO EDITAR DEBAJO DE ESTA LÍNEA ─────────────────────────────────────────
 

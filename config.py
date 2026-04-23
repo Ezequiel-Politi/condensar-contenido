@@ -10,9 +10,6 @@ from pathlib import Path
 
 # ─── EDITAR ESTOS VALORES ────────────────────────────────────────────────────
 
-# Carpeta raíz del vault Obsidian donde se guardan las notas por materia
-VAULT_RAIZ = "C:/Users/pc/Mi unidad/Hana/Proyectos"
-
 # Path completo al script de transcripción local
 # Por defecto apunta al transcribir.py incluido en este mismo repo
 TRANSCRIBIR_PY = str(Path(__file__).parent / "transcribir.py")
@@ -23,7 +20,6 @@ TRANSCRIBIR_PY = str(Path(__file__).parent / "transcribir.py")
 SKILL_DIR = str(Path(__file__).parent.resolve())
 
 CONFIG = {
-    "vault_raiz":     VAULT_RAIZ,
     "transcribir_py": TRANSCRIBIR_PY,
     "skill_dir":      SKILL_DIR,
 }
@@ -31,8 +27,6 @@ CONFIG = {
 if __name__ == "__main__":
     # Verificación básica
     errores = []
-    if not Path(VAULT_RAIZ).exists():
-        errores.append(f"VAULT_RAIZ no existe: {VAULT_RAIZ}")
     if not Path(TRANSCRIBIR_PY).exists():
         errores.append(f"TRANSCRIBIR_PY no existe: {TRANSCRIBIR_PY}")
 

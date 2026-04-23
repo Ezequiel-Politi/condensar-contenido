@@ -1,71 +1,59 @@
 # condensar-contenido
 
-Skill para Claude Code que transcribe audio/video y condensa material académico (PDFs, clases, cápsulas) en notas estructuradas para Obsidian.
+Skill que transcribe audio/video y extrae texto de documentos, generando archivos `.md` con el contenido **íntegro** (sin resúmenes ni reinterpretaciones). 100% programático, 0 tokens LLM.
+
+## Uso
+
+```bash
+python procesar.py "D:/Carpeta/Con/Archivos" --lang es
+```
+
+Eso es todo. Un solo comando procesa la carpeta entera.
 
 ## Archivos
 
 ```
 condensar-contenido/
-  SKILL.md                  # Instrucciones del skill (no editar)
-  config.py                 # ← ÚNICO archivo que hay que editar al instalar
-  condensar_inventario.py   # Fase 0: inventario y clasificación (0 tokens LLM)
-  condensar_extraer.py      # Extracción de texto de PDF/DOCX/PPTX (0 tokens LLM)
-  condensar_qa.py           # QA mecánico de notas Obsidian (0 tokens LLM)
+  SKILL.md              # Instrucciones del skill (no editar)
+  config.py             # Configuración (editar si transcribir.py está en otro lado)
+  procesar.py           # ← Orquestador principal (ejecutar este)
+  condensar_extraer.py  # Extracción de texto de PDF/DOCX/PPTX/XLSX
+  transcribir.py        # Transcripción de audio/video con Whisper
 ```
 
 ## Instalación
 
-### 1. Clonar en el directorio de skills de Claude Code
+### 1. Dependencias
 
-**Windows:**
-```
-git clone <repo-url> "%USERPROFILE%\.claude\skills\condensar-contenido"
-```
-
-**Linux / Mac:**
-```
-git clone <repo-url> ~/.claude/skills/condensar-contenido
+```bash
+pip install pdfplumber python-docx python-pptx openpyxl
 ```
 
-### 2. Editar config.py
-
-Abrir `config.py` y modificar las dos variables:
-
-```python
-VAULT_RAIZ     = "ruta/a/tu/vault/obsidian"
-TRANSCRIBIR_PY = "ruta/a/tu/transcribir.py"
+Para transcripción de audio/video:
+```bash
+pip install stable-whisper
 ```
 
-Verificar que la config es correcta:
+### 2. Verificar
+
 ```bash
 python config.py
 ```
 
-### 3. Instalar dependencias Python
+## Formatos soportados
 
-```bash
-pip install pdfplumber python-docx python-pptx pyyaml
-```
+| Formato | Extensiones | Resultado |
+|---------|------------|-----------|
+| Audio | .mp3 .wav .m4a .flac .ogg .wma .aac .mp2 .opus .aiff .au | `_transcripcion.md` |
+| Video | .mp4 .mkv .avi .mov .wmv .webm .flv .ts .mts .m4v .3gp | `_transcripcion.md` |
+| PDF | .pdf | `_extraido.md` |
+| Word | .docx | `_extraido.md` |
+| PowerPoint | .pptx | `_extraido.md` |
+| Excel | .xlsx .xls | `_extraido.md` |
 
-### 4. Verificar instalación
+## Comportamiento
 
-En Claude Code, ejecutar:
-```
-/condensar-contenido
-```
-
-El skill debería arrancar y pedir el path de la carpeta de la materia.
-
-## Dependencias externas
-
-- **transcribir.py**: script local de transcripción de audio/video con Whisper. No incluido en este repo — cada usuario debe tener el suyo y apuntar `TRANSCRIBIR_PY` a él en `config.py`.
-- **Python 3.8+**
-- **pdfplumber**, **python-docx**, **python-pptx**, **pyyaml**
-
-## Uso
-
-```
-/condensar-contenido "D:/Facultad/Gestión Estratégica de Marketing"
-```
-
-El skill procesa todos los archivos de la carpeta, transcribe audio/video si hay, condensa el contenido en notas Obsidian y ejecuta QA automático.
+- Los `.md` se generan en la **misma carpeta** que el original
+- Si el `.md` ya existe, el archivo se **omite** (idempotente)
+- El contenido se preserva **íntegro** — cero resúmenes, cero reinterpretaciones
+- Todo corre **localmente** — cero tokens LLM, cero llamadas a APIs de IA

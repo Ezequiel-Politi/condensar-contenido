@@ -1,12 +1,12 @@
 """
 condensar_extraer.py
-Extrae texto de PDF / DOCX / PPTX / MD — 100% local, 0 tokens LLM.
+Extrae texto de PDF / DOCX / PPTX / XLSX / MD — 100% local, 0 tokens LLM.
 
 Uso:
     python condensar_extraer.py "<ruta_archivo>"
 
 Salida: texto plano a stdout (UTF-8).
-        Primera línea: "PAGINAS:<N>" para PDFs (info útil para clasificación).
+        Primera línea: "PAGINAS:<N>" para PDFs, "HOJAS:<N>" para Excel.
 """
 import sys
 import os
@@ -67,6 +67,54 @@ def extraer_pptx(path: Path) -> str:
     return '\n\n'.join(diapositivas)
 
 
+def extraer_excel(path: Path) -> str:
+    """Extrae contenido de Excel (.xlsx/.xls) como tablas markdown."""
+    try:
+        import openpyxl
+    except ImportError:
+        os.system('pip install openpyxl -q')
+        import openpyxl
+
+    wb = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
+    hojas = []
+    n_hojas = len(wb.sheetnames)
+    print(f'HOJAS:{n_hojas}', flush=True)
+
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        filas = []
+        for row in ws.iter_rows(values_only=True):
+            # Convertir cada celda a string, None → vacío
+            celdas = [str(c).strip() if c is not None else '' for c in row]
+            # Saltar filas completamente vacías
+            if not any(celdas):
+                continue
+            filas.append(celdas)
+
+        if not filas:
+            continue
+
+        # Construir tabla markdown
+        lineas = [f'--- Hoja: {sheet_name} ---']
+
+        # Primera fila como header
+        header = filas[0]
+        lineas.append('| ' + ' | '.join(header) + ' |')
+        lineas.append('| ' + ' | '.join(['---'] * len(header)) + ' |')
+
+        # Resto como datos
+        for fila in filas[1:]:
+            # Ajustar cantidad de columnas al header
+            while len(fila) < len(header):
+                fila.append('')
+            lineas.append('| ' + ' | '.join(fila[:len(header)]) + ' |')
+
+        hojas.append('\n'.join(lineas))
+
+    wb.close()
+    return '\n\n'.join(hojas)
+
+
 def extraer_md(path: Path) -> str:
     return path.read_text(encoding='utf-8', errors='replace')
 
@@ -89,6 +137,8 @@ def main():
         texto = extraer_docx(path)
     elif ext == '.pptx':
         texto = extraer_pptx(path)
+    elif ext in ('.xlsx', '.xls'):
+        texto = extraer_excel(path)
     elif ext == '.md':
         texto = extraer_md(path)
     else:

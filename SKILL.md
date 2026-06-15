@@ -10,23 +10,21 @@ Procesa todos los archivos de una carpeta generando `.md` con el contenido ínte
 
 ## EJECUCIÓN
 
-**Un solo comando. Sin pasos intermedios. Sin intervención de IA.**
+**Un solo comando, sin pasos previos, sin intervención de IA.**
 
-```bash
-python "<SKILL_DIR>/procesar.py" "<CARPETA>" --lang es
-```
+Ejecutar el Bash tool con **EXACTAMENTE** estos parámetros — no cambiar nada excepto `<CARPETA>`:
 
-Donde `<SKILL_DIR>` se obtiene ejecutando:
+| Parámetro Bash tool | Valor |
+|---|---|
+| `command` | `python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>" --lang es` |
+| `run_in_background` | **`true`** ← OBLIGATORIO, nunca omitir |
+| `description` | `Transcribir y extraer texto de <CARPETA>` |
 
-```bash
-# Windows
-python "%USERPROFILE%\.claude\skills\condensar-contenido\config.py"
+⚠️ **`run_in_background: true` es OBLIGATORIO.** Sin él el Bash tool hace timeout en 2 minutos y el proceso falla. La transcripción de video tarda más que eso.
 
-# Linux / Mac
-python ~/.claude/skills/condensar-contenido/config.py
-```
+⚠️ **NO usar el Monitor tool.** El harness notifica automáticamente cuando el background termina. Usar Monitor provoca error exit 127 en Windows.
 
-El JSON devuelto tiene `skill_dir`. Usar ese valor como `<SKILL_DIR>`.
+Después de lanzar, decirle al usuario: *"Procesando en background. Te notifico cuando termine."* No hacer nada más hasta recibir la notificación del harness.
 
 ## QUÉ HACE
 
@@ -43,12 +41,12 @@ Los `.md` generados contienen el **100% del contenido original**, sin resúmenes
 
 **No analizar, resumir ni reinterpretar el contenido.** Este skill solo ejecuta el comando Python y muestra el reporte de salida. El agente NO debe leer los archivos generados ni procesarlos con LLM.
 
-## OPCIONES
+## OPCIONES (siempre con `run_in_background: true`)
 
-```bash
-python "<SKILL_DIR>/procesar.py" "<CARPETA>"                    # Idioma: español (default)
-python "<SKILL_DIR>/procesar.py" "<CARPETA>" --lang en          # Idioma: inglés
-python "<SKILL_DIR>/procesar.py" "<CARPETA>" --model medium     # Modelo Whisper más preciso
+```
+python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>"                  → español (default)
+python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>" --lang en        → inglés
+python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>" --model medium   → Whisper más preciso
 ```
 
 ## ARCHIVOS GENERADOS

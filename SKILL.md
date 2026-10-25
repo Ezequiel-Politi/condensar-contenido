@@ -1,63 +1,56 @@
 ---
-name: condensar-contenido
-description: Transcribe audio/video y extrae texto de documentos (PDF, DOCX, PPTX, XLSX) a archivos .md. 100% programático, 0 tokens LLM. Preserva el contenido íntegro sin resúmenes ni reinterpretaciones.
-argument-hint: "<ruta absoluta a la carpeta con los archivos>"
+name: transcribir
+description: Transcribe videos y audios (una o varias carpetas, o archivos sueltos) a .md junto al original. Ordena la cola de menor a mayor duración, elige el modelo Whisper según la duración, marca al docente y resalta las menciones a Ezequiel. 100% local, 0 tokens LLM.
+argument-hint: "<ruta1> [ruta2 ...]  (carpetas y/o archivos)"
 ---
 
-# /condensar-contenido
+# /transcribir
 
-Procesa todos los archivos de una carpeta generando `.md` con el contenido íntegro.
+Un solo script hace todo: arma la cola, copia a disco local, transcribe, deja el `.md` junto al original y limpia.
 
 ## EJECUCIÓN
 
-**Un solo comando, sin pasos previos, sin intervención de IA.**
+1. Armar la lista de rutas que pasó el usuario (carpetas y/o archivos, pueden estar en lugares distintos).
+2. Mostrar el plan primero:
 
-Ejecutar el Bash tool con **EXACTAMENTE** estos parámetros — no cambiar nada excepto `<CARPETA>`:
+```bash
+python "C:\Users\pc\.claude\skills\transcribir\transcribir.py" "<ruta1>" "<ruta2>" --dry-run
+```
 
-| Parámetro Bash tool | Valor |
-|---|---|
-| `command` | `python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>" --lang es` |
-| `run_in_background` | **`true`** ← OBLIGATORIO, nunca omitir |
-| `description` | `Transcribir y extraer texto de <CARPETA>` |
+3. Lanzar la corrida real con el Bash tool, **`run_in_background: true` obligatorio** (tarda más que el timeout de 2 min):
 
-⚠️ **`run_in_background: true` es OBLIGATORIO.** Sin él el Bash tool hace timeout en 2 minutos y el proceso falla. La transcripción de video tarda más que eso.
+```bash
+python "C:\Users\pc\.claude\skills\transcribir\transcribir.py" "<ruta1>" "<ruta2>"
+```
 
-⚠️ **NO usar el Monitor tool.** El harness notifica automáticamente cuando el background termina. Usar Monitor provoca error exit 127 en Windows.
+Decirle al usuario: *"Procesando en background. Te aviso cuando termine."* No usar el Monitor tool (falla en Windows); el harness notifica solo. Si el usuario pide ver el avance, leer el archivo de salida del background (imprime porcentaje cada 5%).
 
-Después de lanzar, decirle al usuario: *"Procesando en background. Te notifico cuando termine."* No hacer nada más hasta recibir la notificación del harness.
+4. Al terminar, mostrar el resumen por carpeta que imprime el script. **No leer ni resumir los `.md` generados.**
 
 ## QUÉ HACE
 
-El script `procesar.py` ejecuta todo automáticamente:
+- **Cola única**: junta todos los archivos de todas las rutas (recursivo), sin repetir, y los ordena de menor a mayor duración.
+- **Saltea** los que ya tienen `<nombre>_transcripcion.md` (para re-transcribir, borrar ese `.md`).
+- **Modelo según duración**: menos de 20 min → `small`; 20 min o más → `medium`. Se fuerza con `--model`.
+- **Disco local**: copia cada archivo a `C:\Temp\transcripcion_temp\`, transcribe desde ahí y limpia al terminar (evita cuelgues con Drive/red).
+- **Docente**: el hablante con más tiempo de habla va con la etiqueta `**Docente:**`. Los demás párrafos van sin etiqueta. Si hay un solo hablante o ninguno domina, no etiqueta y avisa en el resumen. Se desactiva con `--no-docente`.
+- **Menciones**: cada "Ezequiel" sale en **negrita**.
+- **Glosario**: si la carpeta (o una carpeta superior dentro de la ruta pasada) tiene `glosario.txt`, sus términos se pasan a Whisper como pista. Un término por línea; `#` comenta.
+- **Progreso**: porcentaje por archivo cada 5% y contador `[n/total]`.
 
-1. **Escanea** la carpeta recursivamente
-2. **Transcribe** archivos de audio/video → `<nombre>_transcripcion.md` (vía Whisper local)
-3. **Extrae texto** de PDF, DOCX, PPTX, XLSX → `<nombre>_extraido.md` (vía pdfplumber, python-docx, etc.)
-4. **Omite** archivos que ya tienen su `.md` generado
+## OPCIONES
 
-Los `.md` generados contienen el **100% del contenido original**, sin resúmenes, sin reinterpretaciones, sin consumo de tokens LLM.
+| Opción | Efecto |
+|---|---|
+| `--dry-run` | Solo muestra el plan |
+| `--model small\|medium\|large-v3...` | Fuerza el modelo |
+| `--lang es` | Idioma (default `es`) |
+| `--no-docente` | Sin identificación de hablantes |
 
-## REGLA CRÍTICA
+## SALIDA
 
-**No analizar, resumir ni reinterpretar el contenido.** Este skill solo ejecuta el comando Python y muestra el reporte de salida. El agente NO debe leer los archivos generados ni procesarlos con LLM.
+`<nombre>_transcripcion.md` junto a cada original: cabecera con nombre, fecha, duración y modelo; luego párrafos sin marcas de tiempo.
 
-## OPCIONES (siempre con `run_in_background: true`)
+## DEPENDENCIAS
 
-```
-python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>"                  → español (default)
-python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>" --lang en        → inglés
-python "C:\Users\pc\.claude\skills\condensar-contenido\procesar.py" "<CARPETA>" --model medium   → Whisper más preciso
-```
-
-## ARCHIVOS GENERADOS
-
-| Archivo original | Archivo generado | Método |
-|-----------------|-----------------|--------|
-| `clase.mp4` | `clase_transcripcion.md` | Whisper (local) |
-| `audio.mp3` | `audio_transcripcion.md` | Whisper (local) |
-| `documento.pdf` | `documento_extraido.md` | pdfplumber |
-| `archivo.docx` | `archivo_extraido.md` | python-docx |
-| `slides.pptx` | `slides_extraido.md` | python-pptx |
-| `datos.xlsx` | `datos_extraido.md` | openpyxl |
-
-Todos los `.md` se generan en la **misma carpeta** que el archivo original.
+`faster-whisper`, `resemblyzer`, `librosa`, `scipy`, `webrtcvad-wheels` y `ffmpeg` en el PATH. La primera vez que se usa cada modelo se descarga (small ~460 MB, medium ~1.5 GB).

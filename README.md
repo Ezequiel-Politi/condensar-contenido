@@ -1,59 +1,16 @@
-# condensar-contenido
+# transcribir
 
-Skill que transcribe audio/video y extrae texto de documentos, generando archivos `.md` con el contenido **íntegro** (sin resúmenes ni reinterpretaciones). 100% programático, 0 tokens LLM.
-
-## Uso
+Transcribe audio/video a `.md` (local, sin APIs). Detalle de uso en `SKILL.md`.
 
 ```bash
-python procesar.py "D:/Carpeta/Con/Archivos" --lang es
+python transcribir.py "D:/Clases/Mod1" "E:/Otros/video.mp4" --dry-run
+python transcribir.py "D:/Clases/Mod1" "E:/Otros/video.mp4"
 ```
 
-Eso es todo. Un solo comando procesa la carpeta entera.
+Archivos: `transcribir.py` (todo el código), `SKILL.md` (instrucciones del skill). La configuración (umbral de duración, modelos, nombre a resaltar) son constantes al inicio de `transcribir.py`.
 
-## Archivos
-
-```
-condensar-contenido/
-  SKILL.md              # Instrucciones del skill (no editar)
-  config.py             # Configuración (editar si transcribir.py está en otro lado)
-  procesar.py           # ← Orquestador principal (ejecutar este)
-  condensar_extraer.py  # Extracción de texto de PDF/DOCX/PPTX/XLSX
-  transcribir.py        # Transcripción de audio/video con Whisper
-```
-
-## Instalación
-
-### 1. Dependencias
+Instalación:
 
 ```bash
-pip install pdfplumber python-docx python-pptx openpyxl
+pip install faster-whisper resemblyzer librosa scipy webrtcvad-wheels
 ```
-
-Para transcripción de audio/video:
-```bash
-pip install stable-whisper
-```
-
-### 2. Verificar
-
-```bash
-python config.py
-```
-
-## Formatos soportados
-
-| Formato | Extensiones | Resultado |
-|---------|------------|-----------|
-| Audio | .mp3 .wav .m4a .flac .ogg .wma .aac .mp2 .opus .aiff .au | `_transcripcion.md` |
-| Video | .mp4 .mkv .avi .mov .wmv .webm .flv .ts .mts .m4v .3gp | `_transcripcion.md` |
-| PDF | .pdf | `_extraido.md` |
-| Word | .docx | `_extraido.md` |
-| PowerPoint | .pptx | `_extraido.md` |
-| Excel | .xlsx .xls | `_extraido.md` |
-
-## Comportamiento
-
-- Los `.md` se generan en la **misma carpeta** que el original
-- Si el `.md` ya existe, el archivo se **omite** (idempotente)
-- El contenido se preserva **íntegro** — cero resúmenes, cero reinterpretaciones
-- Todo corre **localmente** — cero tokens LLM, cero llamadas a APIs de IA
